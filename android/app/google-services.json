@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "475067046837",
+    "project_id": "twin-handyman",
+    "storage_bucket": "twin-handyman.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:475067046837:android:73e495bb62746e3b7a97fc",
+        "android_client_info": {
+          "package_name": "com.example.twin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzAGUfAWGmnf696dZDcBTglzF0VWkflyk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
