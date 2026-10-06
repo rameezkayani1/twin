@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.handyman.twin"
+    namespace = "com.example.twin"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
