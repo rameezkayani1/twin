@@ -8,6 +8,8 @@ import 'chat_view.dart';
 import 'extras_view.dart';
 import 'invoices_view.dart';
 import 'job_detail_view.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeView extends StatelessWidget {
   HomeView({super.key});
@@ -206,13 +208,37 @@ class HomeView extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        sub('Welcome, Sarah'),
-                        h('What do you need done?', size: 22),
-                      ],
+                    child: Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                            stream: FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(FirebaseAuth.instance.currentUser?.uid)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return sub('Welcome');
+                              }
+
+                              final data = snapshot.data?.data();
+                              final name = data?['name'] ?? 'there';
+
+                              return sub('Welcome, $name');
+                            },
+                          ),
+                          h('What do you need done?', size: 22),
+                        ],
+                      ),
                     ),
+                    //  Column(
+                    //   crossAxisAlignment: CrossAxisAlignment.start,
+                    //   children: [
+                    //     sub('Welcome, Sarah'),
+                    //     h('What do you need done?', size: 22),
+                    //   ],
+                    // ),
                   ),
                   Obx(
                     () => Stack(
