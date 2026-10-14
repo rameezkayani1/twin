@@ -1,5 +1,5 @@
 // =============================================================
-// quotes_view.dart  —  Customer "Your quotes" (single file)
+// quotes_view.dart  —  Customer "Your quotes" (single file, v2 design)
 //
 // Reads  : quote_requests  (where userId == current user)
 // Updates: status / statusHistory / customerNote (customer actions)
@@ -8,8 +8,16 @@
 //
 // Usage:
 //   QuotesView(onPayDeposit: (q) => Get.to(() => PayView(...)))
+//
+// Design notes
+//  - Phone  (<600)  : 1 column
+//  - Tablet (<960)  : 2 columns
+//  - Desktop        : 3 columns, content capped at 1100px
+//  - Detail page    : single column on phone, two columns when wide
+//  - No fixed card heights -> no overflow with large system fonts
 // =============================================================
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -22,14 +30,15 @@ import 'package:get/get.dart';
 class _T {
   static const orange = Color(0xFFFF7A00);
   static const orangeDark = Color(0xFFE55F00);
-  static const ink = Color(0xFF1F2430);
-  static const bg = Color(0xFFF6F7FB);
-  static const muted = Color(0xFF7A8194);
-  static const line = Color(0xFFE6E9F2);
-  static const green = Color(0xFF22B573);
-  static const red = Color(0xFFEB5757);
-  static const blue = Color(0xFF2D9CDB);
-  static const purple = Color(0xFF9B51E0);
+  static const ink = Color(0xFF1B1F2A);
+  static const bg = Color(0xFFF5F3EF); // warm paper
+  static const surface = Colors.white;
+  static const muted = Color(0xFF787F90);
+  static const line = Color(0xFFE9E5DD);
+  static const green = Color(0xFF1FAE6B);
+  static const red = Color(0xFFE4513F);
+  static const blue = Color(0xFF2D8CDB);
+  static const purple = Color(0xFF8E54E0);
 }
 
 const _months = [
@@ -69,19 +78,26 @@ IconData _serviceIcon(String s) {
     case 'Electrical':
       return Icons.electrical_services;
     case 'Painting':
-      return Icons.format_paint;
+      return Icons.format_paint_rounded;
     case 'Cleaning':
-      return Icons.cleaning_services;
+      return Icons.cleaning_services_rounded;
+    case 'Pressure Washing':
+      return Icons.water_drop_rounded;
+    case 'Assembly':
+      return Icons.construction_rounded;
+    case 'Waste Disposal':
+      return Icons.delete_outline_rounded;
+    case 'Lawn Services':
+    case 'Landscaping':
+      return Icons.yard_rounded;
     case 'AC Repair':
       return Icons.ac_unit;
     case 'Carpentry':
       return Icons.carpenter;
     case 'Roofing':
       return Icons.roofing;
-    case 'Landscaping':
-      return Icons.yard;
     case 'Moving':
-      return Icons.local_shipping;
+      return Icons.local_shipping_rounded;
     default:
       return Icons.handyman_rounded;
   }
@@ -109,6 +125,15 @@ class QS {
     accepted,
     scheduled,
     completed,
+  ];
+
+  static const flowLabels = [
+    'Sent',
+    'Review',
+    'Quote',
+    'Approved',
+    'Booked',
+    'Done',
   ];
 }
 
@@ -146,7 +171,7 @@ _Meta _meta(String s) {
       return const _Meta(
         'Changes requested',
         'We received your change request and will send an updated quote.',
-        Color(0xFFF2C94C),
+        Color(0xFFE0A800),
         Icons.edit_note_rounded,
       );
     case QS.accepted:
@@ -325,7 +350,7 @@ class QuoteModel {
 }
 
 // ---------------------------------------------------------
-// CONTROLLER
+// CONTROLLER  (logic unchanged)
 // ---------------------------------------------------------
 class QuotesController extends GetxController {
   final _db = FirebaseFirestore.instance;
@@ -472,11 +497,33 @@ class QuotesController extends GetxController {
 }
 
 // ---------------------------------------------------------
+// LAYOUT HELPERS
+// ---------------------------------------------------------
+class _Page extends StatelessWidget {
+  final Widget child;
+  final double max;
+  const _Page({required this.child, this.max = 1100});
+  @override
+  Widget build(BuildContext context) => Center(
+    child: ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: max),
+      child: child,
+    ),
+  );
+}
+
+int _columns(double w) => w >= 960 ? 3 : (w >= 600 ? 2 : 1);
+double _gutter(double w) => w >= 600 ? 24 : 16;
+
+// ---------------------------------------------------------
 // QUOTES LIST PAGE
 // ---------------------------------------------------------
 class QuotesView extends StatelessWidget {
   final void Function(QuoteModel q)? onPayDeposit;
   const QuotesView({super.key, this.onPayDeposit});
+
+  void _open(QuoteModel q) =>
+      Get.to(() => QuoteDetailView(q: q, onPayDeposit: onPayDeposit));
 
   @override
   Widget build(BuildContext context) {
@@ -489,15 +536,97 @@ class QuotesView extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, box) {
             final w = box.maxWidth;
-            final cols = w > 980 ? 3 : (w > 640 ? 2 : 1);
-            final pad = w > 640 ? 24.0 : 16.0;
+            final pad = _gutter(w);
+            final contentW = math.min(w, 1100.0) - pad * 2;
+            final cols = _columns(w);
+            const gap = 14.0;
+            final itemW = (contentW - gap * (cols - 1)) / cols;
+            final top = MediaQuery.of(context).padding.top;
+
             return CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
-                SliverToBoxAdapter(child: _Header(c: c)),
+                // ---- title bar
                 SliverToBoxAdapter(
-                  child: _FilterBar(c: c, pad: pad),
+                  child: _Page(
+                    child: Padding(
+                      padding: EdgeInsets.fromLTRB(pad, top + 18, pad, 6),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  'Your quotes',
+                                  style: TextStyle(
+                                    fontSize: 30,
+                                    height: 1.1,
+                                    fontWeight: FontWeight.w900,
+                                    color: _T.ink,
+                                    letterSpacing: -.5,
+                                  ),
+                                ),
+                                const SizedBox(height: 6),
+                                Obx(
+                                  () => Text(
+                                    c.quotes.isEmpty
+                                        ? 'From request to finished job.'
+                                        : '${c.quotes.length} request${c.quotes.length == 1 ? '' : 's'} · tracked live',
+                                    style: const TextStyle(color: _T.muted),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Material(
+                            color: _T.surface,
+                            shape: const CircleBorder(
+                              side: BorderSide(color: _T.line),
+                            ),
+                            child: IconButton(
+                              tooltip: 'Refresh',
+                              onPressed: c.refreshData,
+                              icon: const Icon(
+                                Icons.refresh_rounded,
+                                color: _T.ink,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
+
+                // ---- spotlight: quote waiting on the customer
+                SliverToBoxAdapter(
+                  child: Obx(() {
+                    final waiting = c.quotes
+                        .where((q) => q.status == QS.quoted && !q.expired)
+                        .toList();
+                    if (waiting.isEmpty) return const SizedBox.shrink();
+                    return _Page(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(pad, 14, pad, 0),
+                        child: _Spotlight(
+                          q: waiting.first,
+                          more: waiting.length - 1,
+                          onTap: () => _open(waiting.first),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+
+                // ---- filter pills
+                SliverToBoxAdapter(
+                  child: _Page(
+                    child: _FilterBar(c: c, pad: pad),
+                  ),
+                ),
+
+                // ---- content
                 Obx(() {
                   if (c.loading.value) {
                     return const SliverFillRemaining(
@@ -520,27 +649,25 @@ class QuotesView extends StatelessWidget {
                       ),
                     );
                   }
-                  return SliverPadding(
-                    padding: EdgeInsets.fromLTRB(pad, 4, pad, 40),
-                    sliver: SliverGrid(
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: cols,
-                        mainAxisSpacing: 14,
-                        crossAxisSpacing: 14,
-                        mainAxisExtent: 196,
-                      ),
-                      delegate: SliverChildBuilderDelegate(
-                        (_, i) => _QuoteCard(
-                          q: list[i],
-                          onTap: () => Get.to(
-                            () => QuoteDetailView(
-                              q: list[i],
-                              onPayDeposit: onPayDeposit,
-                            ),
-                          ),
-                          index: i,
+                  return SliverToBoxAdapter(
+                    child: _Page(
+                      child: Padding(
+                        padding: EdgeInsets.fromLTRB(pad, 4, pad, 40),
+                        child: Wrap(
+                          spacing: gap,
+                          runSpacing: gap,
+                          children: [
+                            for (var i = 0; i < list.length; i++)
+                              SizedBox(
+                                width: itemW,
+                                child: _QuoteCard(
+                                  q: list[i],
+                                  index: i,
+                                  onTap: () => _open(list[i]),
+                                ),
+                              ),
+                          ],
                         ),
-                        childCount: list.length,
                       ),
                     ),
                   );
@@ -554,120 +681,122 @@ class QuotesView extends StatelessWidget {
   }
 }
 
-class _Header extends StatelessWidget {
-  final QuotesController c;
-  const _Header({required this.c});
+class _Spotlight extends StatelessWidget {
+  final QuoteModel q;
+  final int more;
+  final VoidCallback onTap;
+  const _Spotlight({required this.q, required this.more, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        MediaQuery.of(context).padding.top + 20,
-        20,
-        22,
-      ),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_T.orange, _T.orangeDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-      ),
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1000),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
+    return Material(
+      color: _T.ink,
+      borderRadius: BorderRadius.circular(24),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Stack(
+          children: [
+            Positioned(
+              right: -30,
+              top: -30,
+              child: Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: _T.orange.withValues(alpha: .22),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(18),
+              child: Row(
                 children: [
-                  const Expanded(
-                    child: Text(
-                      'Your quotes',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.w800,
-                      ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.bolt_rounded,
+                              color: _T.orange,
+                              size: 18,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              more > 0
+                                  ? 'Your quote is ready  ·  +$more more'
+                                  : 'Your quote is ready',
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: .75),
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          q.service,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _money(q.quote?.total ?? q.budget),
+                          style: const TextStyle(
+                            color: _T.orange,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  IconButton(
-                    tooltip: 'Refresh',
-                    onPressed: c.refreshData,
-                    icon: const Icon(
-                      Icons.refresh_rounded,
-                      color: Colors.white,
+                  const SizedBox(width: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: _T.orange,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Review',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 4),
-              Text(
-                'Track every request from submission to completion.',
-                style: TextStyle(color: Colors.white.withValues(alpha: .9)),
-              ),
-              const SizedBox(height: 18),
-              Obx(
-                () => Row(
-                  children: [
-                    _stat('Total', c.quotes.length, Icons.folder_open_rounded),
-                    const SizedBox(width: 10),
-                    _stat(
-                      'Action needed',
-                      c.count('Action needed'),
-                      Icons.bolt_rounded,
-                    ),
-                    const SizedBox(width: 10),
-                    _stat(
-                      'In progress',
-                      c.count('In progress'),
-                      Icons.autorenew_rounded,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-
-  Widget _stat(String label, int n, IconData icon) => Expanded(
-    child: Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: .18),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: Colors.white, size: 18),
-          const SizedBox(height: 6),
-          Text(
-            '$n',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: .9),
-              fontSize: 11.5,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
 }
 
 class _FilterBar extends StatelessWidget {
@@ -677,7 +806,7 @@ class _FilterBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-    height: 64,
+    height: 70,
     child: Obx(
       () => ListView(
         scrollDirection: Axis.horizontal,
@@ -686,20 +815,49 @@ class _FilterBar extends StatelessWidget {
           for (final f in QuotesController.filters)
             Padding(
               padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                label: Text('$f  ${c.count(f)}'),
-                selected: c.filter.value == f,
-                onSelected: (_) => c.filter.value = f,
-                showCheckmark: false,
-                selectedColor: _T.orange,
-                backgroundColor: Colors.white,
-                side: const BorderSide(color: _T.line),
-                labelStyle: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: c.filter.value == f ? Colors.white : _T.ink,
-                ),
+              child: _pill(f, c.filter.value == f, c.count(f)),
+            ),
+        ],
+      ),
+    ),
+  );
+
+  Widget _pill(String f, bool on, int n) => GestureDetector(
+    onTap: () => c.filter.value = f,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: on ? _T.ink : _T.surface,
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: on ? _T.ink : _T.line),
+      ),
+      child: Row(
+        children: [
+          Text(
+            f,
+            style: TextStyle(
+              fontWeight: FontWeight.w700,
+              color: on ? Colors.white : _T.ink,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            decoration: BoxDecoration(
+              color: on ? _T.orange : _T.bg,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Text(
+              '$n',
+              style: TextStyle(
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+                color: on ? Colors.white : _T.muted,
               ),
             ),
+          ),
         ],
       ),
     ),
@@ -721,7 +879,7 @@ class _Empty extends StatelessWidget {
             color: _T.orange.withValues(alpha: .1),
             shape: BoxShape.circle,
           ),
-          child: const Icon(Icons.inbox_rounded, color: _T.orange, size: 48),
+          child: const Icon(Icons.inbox_rounded, color: _T.orange, size: 44),
         ),
         const SizedBox(height: 16),
         Text(
@@ -757,12 +915,16 @@ class _StatusChip extends StatelessWidget {
         children: [
           Icon(m.icon, size: 14, color: m.color),
           const SizedBox(width: 5),
-          Text(
-            m.label,
-            style: TextStyle(
-              color: m.color,
-              fontWeight: FontWeight.w800,
-              fontSize: 12,
+          Flexible(
+            child: Text(
+              m.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: m.color,
+                fontWeight: FontWeight.w800,
+                fontSize: 12,
+              ),
             ),
           ),
         ],
@@ -771,30 +933,78 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-/// Segmented progress tracker for the happy-path flow
-class _Track extends StatelessWidget {
+/// Dot-and-line journey tracker. Each stage is its own cell so labels
+/// always sit exactly under their dot, at any width.
+class _Stepper extends StatelessWidget {
   final String status;
-  const _Track(this.status);
+  final bool labels;
+  final double dot;
+  const _Stepper(this.status, {this.labels = false, this.dot = 10});
+
   @override
   Widget build(BuildContext context) {
     final failed = status == QS.rejected || status == QS.cancelled;
     var idx = QS.flow.indexOf(status);
     if (status == QS.changes) idx = 1;
-    if (failed) idx = QS.flow.length; // all segments red-tinted below
-    final col = failed ? _T.red : _meta(status).color;
+    final base = failed ? _T.red : _meta(status).color;
+    final last = QS.flow.length - 1;
+
+    Color seg(bool on) =>
+        failed ? base.withValues(alpha: .3) : (on ? base : _T.line);
+
     return Row(
       children: [
-        for (var i = 0; i < QS.flow.length; i++)
+        for (var i = 0; i <= last; i++)
           Expanded(
-            child: Container(
-              height: 6,
-              margin: EdgeInsets.only(right: i == QS.flow.length - 1 ? 0 : 4),
-              decoration: BoxDecoration(
-                color: failed
-                    ? col.withValues(alpha: .35)
-                    : (i <= idx ? col : _T.line),
-                borderRadius: BorderRadius.circular(6),
-              ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 3,
+                        color: i == 0 ? Colors.transparent : seg(i <= idx),
+                      ),
+                    ),
+                    Container(
+                      width: dot,
+                      height: dot,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: seg(i <= idx),
+                        border: !failed && i == idx
+                            ? Border.all(
+                                color: base.withValues(alpha: .3),
+                                width: dot * .35,
+                              )
+                            : null,
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        height: 3,
+                        color: i == last ? Colors.transparent : seg(i < idx),
+                      ),
+                    ),
+                  ],
+                ),
+                if (labels) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    QS.flowLabels[i],
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      fontWeight: i == idx && !failed
+                          ? FontWeight.w800
+                          : FontWeight.w500,
+                      color: i == idx && !failed ? _T.ink : _T.muted,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
       ],
@@ -814,122 +1024,152 @@ class _QuoteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final m = _meta(q.status);
+    final accent = q.expired ? _T.red : m.color;
+    final hasQuote = q.quote != null;
+
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 300 + (index.clamp(0, 6)) * 60),
+      duration: Duration(milliseconds: 280 + (index.clamp(0, 6)) * 60),
       curve: Curves.easeOut,
       builder: (_, v, child) => Opacity(
         opacity: v,
         child: Transform.translate(
-          offset: Offset(0, 16 * (1 - v)),
+          offset: Offset(0, 14 * (1 - v)),
           child: child,
         ),
       ),
       child: Material(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        elevation: 0,
+        color: _T.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: q.status == QS.quoted && !q.expired
+                ? _T.purple.withValues(alpha: .55)
+                : _T.line,
+            width: q.status == QS.quoted && !q.expired ? 1.5 : 1,
+          ),
+        ),
         child: InkWell(
-          borderRadius: BorderRadius.circular(22),
           onTap: onTap,
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(
-                color: q.status == QS.quoted
-                    ? _T.purple.withValues(alpha: .5)
-                    : _T.line,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: _T.ink.withValues(alpha: .05),
-                  blurRadius: 18,
-                  offset: const Offset(0, 6),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          child: IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: m.color.withValues(alpha: .13),
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Icon(_serviceIcon(q.service), color: m.color),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
+                Container(width: 5, color: accent),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 42,
+                              height: 42,
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: .12),
+                                borderRadius: BorderRadius.circular(13),
+                              ),
+                              child: Icon(
+                                _serviceIcon(q.service),
+                                color: accent,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    q.service,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: _T.ink,
+                                    ),
+                                  ),
+                                  Text(
+                                    '${q.number} · ${_date(q.createdAt)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      color: _T.muted,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Text(
+                                  hasQuote ? 'TOTAL' : 'BUDGET',
+                                  style: const TextStyle(
+                                    color: _T.muted,
+                                    fontSize: 9.5,
+                                    letterSpacing: .8,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                                Text(
+                                  _money(q.quote?.total ?? q.budget),
+                                  style: const TextStyle(
+                                    fontSize: 17,
+                                    fontWeight: FontWeight.w900,
+                                    color: _T.ink,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                        if (q.description.isNotEmpty) ...[
+                          const SizedBox(height: 10),
                           Text(
-                            q.service,
-                            maxLines: 1,
+                            q.description,
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: _T.ink,
-                            ),
-                          ),
-                          Text(
-                            '${q.number} · ${_date(q.createdAt)}',
-                            style: const TextStyle(
                               color: _T.muted,
-                              fontSize: 12,
+                              height: 1.35,
+                              fontSize: 13,
                             ),
                           ),
                         ],
-                      ),
-                    ),
-                    _StatusChip(q.status, expired: q.expired),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                _Track(q.status),
-                const Spacer(),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            q.quote != null ? 'Quote total' : 'Your budget',
-                            style: const TextStyle(
-                              color: _T.muted,
-                              fontSize: 11.5,
+                        const SizedBox(height: 14),
+                        _Stepper(q.status),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Flexible(
+                              child: _StatusChip(q.status, expired: q.expired),
                             ),
-                          ),
-                          Text(
-                            _money(q.quote?.total ?? q.budget),
-                            style: const TextStyle(
-                              fontSize: 19,
-                              fontWeight: FontWeight.w800,
-                              color: _T.ink,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (q.status == QS.quoted && !q.expired)
-                      const Text(
-                        'Review →',
-                        style: TextStyle(
-                          color: _T.purple,
-                          fontWeight: FontWeight.w800,
+                            const Spacer(),
+                            if (q.status == QS.quoted && !q.expired)
+                              const Text(
+                                'Review →',
+                                style: TextStyle(
+                                  color: _T.purple,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              )
+                            else
+                              const Icon(
+                                Icons.chevron_right_rounded,
+                                color: _T.muted,
+                              ),
+                          ],
                         ),
-                      )
-                    else
-                      const Icon(Icons.chevron_right_rounded, color: _T.muted),
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -964,14 +1204,18 @@ class QuoteDetailView extends StatelessWidget {
           backgroundColor: _T.bg,
           appBar: AppBar(
             backgroundColor: _T.bg,
+            surfaceTintColor: Colors.transparent,
             elevation: 0,
             foregroundColor: _T.ink,
+            centerTitle: false,
             title: Text(
               cur.number,
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
           ),
-          bottomNavigationBar: _actionBar(context, c, cur),
+          bottomNavigationBar: _hasAction(cur)
+              ? _actionBar(context, c, cur)
+              : null,
           body: RefreshIndicator(
             color: _T.orange,
             onRefresh: () async {
@@ -982,10 +1226,10 @@ class QuoteDetailView extends StatelessWidget {
             },
             child: LayoutBuilder(
               builder: (context, box) {
-                final wide = box.maxWidth > 820;
+                final wide = box.maxWidth > 860;
                 final left = <Widget>[
                   _hero(cur),
-                  if (cur.quote != null) _breakdown(cur),
+                  if (cur.quote != null) _money_(cur),
                   if (cur.adminNote.isNotEmpty) _adminNote(cur),
                 ];
                 final right = <Widget>[
@@ -995,24 +1239,25 @@ class QuoteDetailView extends StatelessWidget {
                 ];
                 return ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+                  padding: EdgeInsets.fromLTRB(
+                    _gutter(box.maxWidth),
+                    4,
+                    _gutter(box.maxWidth),
+                    32,
+                  ),
                   children: [
-                    Center(
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxWidth: wide ? 1040 : 640,
-                        ),
-                        child: wide
-                            ? Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(child: Column(children: left)),
-                                  const SizedBox(width: 16),
-                                  Expanded(child: Column(children: right)),
-                                ],
-                              )
-                            : Column(children: [...left, ...right]),
-                      ),
+                    _Page(
+                      max: wide ? 1080 : 640,
+                      child: wide
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: Column(children: left)),
+                                const SizedBox(width: 16),
+                                Expanded(child: Column(children: right)),
+                              ],
+                            )
+                          : Column(children: [...left, ...right]),
                     ),
                   ],
                 );
@@ -1025,20 +1270,20 @@ class QuoteDetailView extends StatelessWidget {
   }
 
   // ----- containers -----
-  Widget _card(String? title, Widget child, {Color? color}) => Container(
+  Widget _card(
+    String? title,
+    Widget child, {
+    Color? color,
+    Color? border,
+    EdgeInsets? pad,
+  }) => Container(
     width: double.infinity,
     margin: const EdgeInsets.only(bottom: 14),
-    padding: const EdgeInsets.all(18),
+    padding: pad ?? const EdgeInsets.all(18),
     decoration: BoxDecoration(
-      color: color ?? Colors.white,
+      color: color ?? _T.surface,
       borderRadius: BorderRadius.circular(22),
-      boxShadow: [
-        BoxShadow(
-          color: _T.ink.withValues(alpha: .05),
-          blurRadius: 18,
-          offset: const Offset(0, 6),
-        ),
-      ],
+      border: Border.all(color: border ?? _T.line),
     ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1102,19 +1347,21 @@ class QuoteDetailView extends StatelessWidget {
         : _meta(x.status);
     return _card(
       null,
+      color: m.color.withValues(alpha: .07),
+      border: m.color.withValues(alpha: .25),
       Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Container(
-                width: 54,
-                height: 54,
+                width: 52,
+                height: 52,
                 decoration: BoxDecoration(
-                  color: m.color.withValues(alpha: .13),
-                  borderRadius: BorderRadius.circular(17),
+                  color: m.color,
+                  borderRadius: BorderRadius.circular(16),
                 ),
-                child: Icon(m.icon, color: m.color, size: 28),
+                child: Icon(m.icon, color: Colors.white, size: 26),
               ),
               const SizedBox(width: 14),
               Expanded(
@@ -1123,74 +1370,198 @@ class QuoteDetailView extends StatelessWidget {
                   children: [
                     Text(
                       x.service,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
                         fontSize: 20,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w900,
                         color: _T.ink,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    _StatusChip(x.status, expired: x.expired),
+                    const SizedBox(height: 2),
+                    Text(
+                      m.label,
+                      style: TextStyle(
+                        color: m.color,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 14),
-          Text(m.desc, style: const TextStyle(color: _T.muted, height: 1.4)),
-          const SizedBox(height: 16),
-          _Track(x.status),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
-                'Submitted',
-                style: TextStyle(fontSize: 10.5, color: _T.muted),
-              ),
-              Text('Quote', style: TextStyle(fontSize: 10.5, color: _T.muted)),
-              Text('Done', style: TextStyle(fontSize: 10.5, color: _T.muted)),
-            ],
-          ),
+          Text(m.desc, style: const TextStyle(color: _T.ink, height: 1.4)),
+          const SizedBox(height: 20),
+          _Stepper(x.status, labels: true, dot: 14),
         ],
       ),
     );
   }
 
-  // ----- quote breakdown -----
-  Widget _breakdown(QuoteModel x) {
+  // ----- money: ring + breakdown -----
+  Widget _money_(QuoteModel x) {
     final b = x.quote!;
-    return _card(
-      'Quote breakdown',
-      Column(
-        children: [
-          _kv('Labor', _money(b.labor)),
-          _kv('Materials', _money(b.materials)),
-          _kv('Service / travel fees', _money(b.fees)),
-          _kv('Discount', '-${_money(b.discount)}', color: _T.green),
-          _kv('Tax', _money(b.tax)),
-          const Divider(height: 22),
-          _kv('Project total', _money(b.total), bold: true),
-          _kv(
-            'Deposit (${b.depositPct.toStringAsFixed(0)}%)',
-            _money(b.deposit),
-            bold: true,
-            color: _T.orange,
+    final frac = b.total > 0 ? (b.deposit / b.total).clamp(0.0, 1.0) : 0.0;
+    Widget legend(Color c, String label, String value, {String? sub}) => Row(
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: c, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                sub == null ? label : '$label · $sub',
+                style: const TextStyle(color: _T.muted, fontSize: 12),
+              ),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 16,
+                  color: _T.ink,
+                ),
+              ),
+            ],
           ),
-          _kv('Remaining balance', _money(b.remaining)),
-          if (b.expiresAt != null) ...[
-            const Divider(height: 22),
-            _kv('Issued', _date(b.issuedAt)),
-            _kv(
-              'Valid until',
-              _date(b.expiresAt),
-              color: x.expired ? _T.red : _T.ink,
+        ),
+      ],
+    );
+
+    return _card(
+      'Your quote',
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              SizedBox(
+                width: 112,
+                height: 112,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    CustomPaint(
+                      size: const Size(112, 112),
+                      painter: _RingPainter(frac, _T.orange, _T.line),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: FittedBox(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Text(
+                              'TOTAL',
+                              style: TextStyle(
+                                fontSize: 9.5,
+                                letterSpacing: .8,
+                                color: _T.muted,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              _money(b.total),
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w900,
+                                fontSize: 16,
+                                color: _T.ink,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  children: [
+                    legend(
+                      _T.orange,
+                      'Deposit',
+                      _money(b.deposit),
+                      sub: '${b.depositPct.toStringAsFixed(0)}%',
+                    ),
+                    const SizedBox(height: 14),
+                    legend(_T.line, 'Remaining', _money(b.remaining)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          if (b.expiresAt != null)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              decoration: BoxDecoration(
+                color: (x.expired ? _T.red : _T.green).withValues(alpha: .1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    x.expired
+                        ? Icons.timer_off_rounded
+                        : Icons.schedule_rounded,
+                    size: 16,
+                    color: x.expired ? _T.red : _T.green,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      x.expired
+                          ? 'Expired ${_date(b.expiresAt)}'
+                          : 'Valid until ${_date(b.expiresAt)}',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12.5,
+                        color: x.expired ? _T.red : _T.green,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
-          if (b.notes.isNotEmpty) ...[
-            const SizedBox(height: 10),
+          Theme(
+            data: Theme.of(
+              Get.context!,
+            ).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              childrenPadding: EdgeInsets.zero,
+              iconColor: _T.orange,
+              collapsedIconColor: _T.muted,
+              title: const Text(
+                'See price breakdown',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14),
+              ),
+              children: [
+                _kv('Labor', _money(b.labor)),
+                if (b.materials > 0) _kv('Materials', _money(b.materials)),
+                if (b.fees > 0) _kv('Service / travel fees', _money(b.fees)),
+                if (b.discount > 0)
+                  _kv('Discount', '-${_money(b.discount)}', color: _T.green),
+                if (b.tax > 0) _kv('Tax', _money(b.tax)),
+                const Divider(height: 20),
+                _kv('Project total', _money(b.total), bold: true),
+                if (b.issuedAt != null) _kv('Issued', _date(b.issuedAt)),
+              ],
+            ),
+          ),
+          if (b.notes.isNotEmpty)
             Container(
               width: double.infinity,
+              margin: const EdgeInsets.only(top: 4),
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: _T.blue.withValues(alpha: .1),
@@ -1201,15 +1572,16 @@ class QuoteDetailView extends StatelessWidget {
                 style: const TextStyle(color: _T.blue, height: 1.4),
               ),
             ),
-          ],
-          const SizedBox(height: 6),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
               onPressed: _terms,
               icon: const Icon(Icons.description_outlined, size: 18),
               label: const Text('Terms & conditions'),
-              style: TextButton.styleFrom(foregroundColor: _T.orange),
+              style: TextButton.styleFrom(
+                foregroundColor: _T.orange,
+                padding: const EdgeInsets.only(top: 6),
+              ),
             ),
           ),
         ],
@@ -1218,40 +1590,134 @@ class QuoteDetailView extends StatelessWidget {
   }
 
   Widget _adminNote(QuoteModel x) => _card(
-    'Message from our team',
+    null,
+    color: _T.orange.withValues(alpha: .08),
+    border: _T.orange.withValues(alpha: .25),
     Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Icon(Icons.support_agent_rounded, color: _T.orange),
         const SizedBox(width: 10),
         Expanded(
-          child: Text(
-            x.adminNote,
-            style: const TextStyle(height: 1.4, color: _T.ink),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Message from our team',
+                style: TextStyle(
+                  fontWeight: FontWeight.w800,
+                  color: _T.orangeDark,
+                  fontSize: 12.5,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                x.adminNote,
+                style: const TextStyle(height: 1.4, color: _T.ink),
+              ),
+            ],
           ),
         ),
       ],
     ),
-    color: _T.orange.withValues(alpha: .08),
   );
 
   // ----- request info -----
+  Widget _fact(IconData icon, String label, String value) => Container(
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: _T.bg,
+      borderRadius: BorderRadius.circular(14),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: _T.orange),
+        const SizedBox(height: 8),
+        Text(label, style: const TextStyle(color: _T.muted, fontSize: 11.5)),
+        const SizedBox(height: 1),
+        Text(
+          value,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w800, color: _T.ink),
+        ),
+      ],
+    ),
+  );
+
+  Widget _line(IconData i, String v) => v.isEmpty
+      ? const SizedBox.shrink()
+      : Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(i, size: 18, color: _T.muted),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  v,
+                  style: const TextStyle(color: _T.ink, height: 1.3),
+                ),
+              ),
+            ],
+          ),
+        );
+
   Widget _info(QuoteModel x) => _card(
     'Your request',
-    Column(
-      children: [
-        _kv('Service', x.service),
-        _kv('Description', x.description),
-        _kv('Budget', _money(x.budget)),
-        _kv('Urgency', x.urgency.isEmpty ? '—' : x.urgency),
-        _kv('Preferred date', _date(x.preferredDate)),
-        _kv('Time slot', x.slot.isEmpty ? '—' : x.slot),
-        _kv('Address', x.address),
-        const Divider(height: 22),
-        _kv('Name', x.name),
-        _kv('Phone', x.phone),
-        _kv('Email', x.email),
-      ],
+    LayoutBuilder(
+      builder: (context, box) {
+        final tileW = (box.maxWidth - 10) / 2;
+        Widget tile(Widget w) => SizedBox(width: tileW, child: w);
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (x.description.isNotEmpty)
+              Text(
+                x.description,
+                style: const TextStyle(color: _T.ink, height: 1.45),
+              ),
+            if (x.description.isNotEmpty) const SizedBox(height: 14),
+            Wrap(
+              spacing: 10,
+              runSpacing: 10,
+              children: [
+                tile(
+                  _fact(
+                    Icons.event_rounded,
+                    'Preferred date',
+                    _date(x.preferredDate),
+                  ),
+                ),
+                tile(
+                  _fact(
+                    Icons.schedule_rounded,
+                    'Time slot',
+                    x.slot.isEmpty ? '—' : x.slot,
+                  ),
+                ),
+                tile(
+                  _fact(
+                    Icons.bolt_rounded,
+                    'Urgency',
+                    x.urgency.isEmpty ? '—' : x.urgency,
+                  ),
+                ),
+                tile(
+                  _fact(Icons.savings_rounded, 'Your budget', _money(x.budget)),
+                ),
+              ],
+            ),
+            const Divider(height: 28),
+            _line(Icons.location_on_outlined, x.address),
+            _line(Icons.person_outline_rounded, x.name),
+            _line(Icons.phone_outlined, x.phone),
+            _line(Icons.mail_outline_rounded, x.email),
+          ],
+        );
+      },
     ),
   );
 
@@ -1391,84 +1857,85 @@ class QuoteDetailView extends StatelessWidget {
   }
 
   // ----- sticky action bar (changes with status) -----
-  Widget? _actionBar(BuildContext context, QuotesController c, QuoteModel x) {
-    Widget? content;
-    if (x.status == QS.quoted && !x.expired) {
-      content = Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _primary(
-            'Approve quote',
-            Icons.check_circle_rounded,
-            _T.green,
-            c.busy.value ? null : () => _approve(context, c, x),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _outline(
-                  'Request changes',
-                  Icons.edit_note_rounded,
-                  _T.orange,
-                  c.busy.value
-                      ? null
-                      : () => _askNote(context, c, x, QS.changes),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _outline(
-                  'Decline',
-                  Icons.close_rounded,
-                  _T.red,
-                  c.busy.value
-                      ? null
-                      : () => _askNote(context, c, x, QS.rejected),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    } else if (x.status == QS.accepted && !x.depositPaid && x.quote != null) {
-      content = _primary(
-        'Pay deposit — ${_money(x.quote!.deposit)}',
-        Icons.payments_rounded,
-        _T.orange,
-        onPayDeposit == null ? null : () => onPayDeposit!(x),
-      );
-    } else if (x.status == QS.pending ||
-        x.status == QS.reviewing ||
-        x.status == QS.changes) {
-      content = _outline(
-        'Cancel request',
-        Icons.block_rounded,
-        _T.red,
-        c.busy.value ? null : () => _askNote(context, c, x, QS.cancelled),
-      );
-    }
-    if (content == null) return null;
+  bool _hasAction(QuoteModel x) =>
+      (x.status == QS.quoted && !x.expired) ||
+      (x.status == QS.accepted && !x.depositPaid && x.quote != null) ||
+      x.status == QS.pending ||
+      x.status == QS.reviewing ||
+      x.status == QS.changes;
+
+  Widget _actionBar(BuildContext context, QuotesController c, QuoteModel x) {
     return SafeArea(
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: _T.ink.withValues(alpha: .08),
-              blurRadius: 20,
-              offset: const Offset(0, -4),
-            ),
-          ],
+        decoration: const BoxDecoration(
+          color: _T.surface,
+          border: Border(top: BorderSide(color: _T.line)),
         ),
         child: Center(
           heightFactor: 1,
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 640),
-            child: Obx(
-              () => AbsorbPointer(absorbing: c.busy.value, child: content),
-            ),
+            child: Obx(() {
+              final busy = c.busy.value;
+              Widget content;
+              if (x.status == QS.quoted && !x.expired) {
+                content = Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _primary(
+                      'Approve quote',
+                      Icons.check_circle_rounded,
+                      _T.green,
+                      busy ? null : () => _approve(context, c, x),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _outline(
+                            'Request changes',
+                            Icons.edit_note_rounded,
+                            _T.orange,
+                            busy
+                                ? null
+                                : () => _askNote(context, c, x, QS.changes),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _outline(
+                            'Decline',
+                            Icons.close_rounded,
+                            _T.red,
+                            busy
+                                ? null
+                                : () => _askNote(context, c, x, QS.rejected),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                );
+              } else if (x.status == QS.accepted &&
+                  !x.depositPaid &&
+                  x.quote != null) {
+                content = _primary(
+                  'Pay deposit — ${_money(x.quote!.deposit)}',
+                  Icons.payments_rounded,
+                  _T.orange,
+                  onPayDeposit == null ? null : () => onPayDeposit!(x),
+                );
+              } else {
+                content = _outline(
+                  'Cancel request',
+                  Icons.block_rounded,
+                  _T.red,
+                  busy ? null : () => _askNote(context, c, x, QS.cancelled),
+                );
+              }
+              return AbsorbPointer(absorbing: busy, child: content);
+            }),
           ),
         ),
       ),
@@ -1481,11 +1948,15 @@ class QuoteDetailView extends StatelessWidget {
     child: ElevatedButton.icon(
       onPressed: f,
       icon: Icon(i),
-      label: Text(
-        t,
-        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+      label: Flexible(
+        child: Text(
+          t,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+        ),
       ),
       style: ElevatedButton.styleFrom(
+        elevation: 0,
         backgroundColor: col,
         foregroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -1499,7 +1970,13 @@ class QuoteDetailView extends StatelessWidget {
     child: OutlinedButton.icon(
       onPressed: f,
       icon: Icon(i, size: 18),
-      label: Text(t, style: const TextStyle(fontWeight: FontWeight.w700)),
+      label: Flexible(
+        child: Text(
+          t,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
       style: OutlinedButton.styleFrom(
         foregroundColor: col,
         side: BorderSide(color: col.withValues(alpha: .6)),
@@ -1557,9 +2034,10 @@ class QuoteDetailView extends StatelessWidget {
       context: ctx,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
+      constraints: const BoxConstraints(maxWidth: 640),
       builder: (_) => _NoteSheet(
         title: title,
-        required: isChanges,
+        isRequired: isChanges,
         confirm: isChanges ? 'Send request' : 'Confirm',
         danger: !isChanges,
       ),
@@ -1590,15 +2068,50 @@ class QuoteDetailView extends StatelessWidget {
 }
 
 // ---------------------------------------------------------
+// DEPOSIT RING
+// ---------------------------------------------------------
+class _RingPainter extends CustomPainter {
+  final double frac;
+  final Color fg, bg;
+  _RingPainter(this.frac, this.fg, this.bg);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const stroke = 12.0;
+    final rect = Rect.fromLTWH(
+      stroke / 2,
+      stroke / 2,
+      size.width - stroke,
+      size.height - stroke,
+    );
+    final track = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..color = bg;
+    canvas.drawArc(rect, -math.pi / 2, math.pi * 2, false, track);
+    final arc = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = stroke
+      ..strokeCap = StrokeCap.round
+      ..color = fg;
+    canvas.drawArc(rect, -math.pi / 2, math.pi * 2 * frac, false, arc);
+  }
+
+  @override
+  bool shouldRepaint(covariant _RingPainter old) =>
+      old.frac != frac || old.fg != fg || old.bg != bg;
+}
+
+// ---------------------------------------------------------
 // NOTE BOTTOM SHEET
 // ---------------------------------------------------------
 class _NoteSheet extends StatefulWidget {
   final String title, confirm;
-  final bool required, danger;
+  final bool isRequired, danger;
   const _NoteSheet({
     required this.title,
     required this.confirm,
-    required this.required,
+    required this.isRequired,
     required this.danger,
   });
   @override
@@ -1659,16 +2172,12 @@ class _NoteSheetState extends State<_NoteSheet> {
                 maxLines: 4,
                 textCapitalization: TextCapitalization.sentences,
                 decoration: InputDecoration(
-                  hintText: widget.required
+                  hintText: widget.isRequired
                       ? 'Describe the changes…'
                       : 'Reason (optional)',
                   errorText: _err,
-                  prefixIcon: const Padding(
-                    padding: EdgeInsets.only(bottom: 56),
-                    child: Icon(Icons.chat_bubble_outline_rounded),
-                  ),
                   filled: true,
-                  fillColor: const Color(0xFFF8F9FC),
+                  fillColor: _T.bg,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                     borderSide: BorderSide.none,
@@ -1682,6 +2191,7 @@ class _NoteSheetState extends State<_NoteSheet> {
                     child: OutlinedButton(
                       onPressed: () => Navigator.pop(context),
                       style: OutlinedButton.styleFrom(
+                        foregroundColor: _T.ink,
                         minimumSize: const Size.fromHeight(48),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -1694,13 +2204,14 @@ class _NoteSheetState extends State<_NoteSheet> {
                   Expanded(
                     child: ElevatedButton(
                       onPressed: () {
-                        if (widget.required && _t.text.trim().isEmpty) {
+                        if (widget.isRequired && _t.text.trim().isEmpty) {
                           setState(() => _err = 'Please add a short note');
                           return;
                         }
                         Navigator.pop(context, _t.text.trim());
                       },
                       style: ElevatedButton.styleFrom(
+                        elevation: 0,
                         backgroundColor: col,
                         foregroundColor: Colors.white,
                         minimumSize: const Size.fromHeight(48),

@@ -64,16 +64,14 @@ class ServiceItem {
 }
 
 const kServiceItems = <ServiceItem>[
-  ServiceItem('Plumbing', Icons.plumbing, Color(0xFF2D9CDB)),
-  ServiceItem('Electrical', Icons.electrical_services, Color(0xFFF2C94C)),
-  ServiceItem('Painting', Icons.format_paint, Color(0xFFEB5757)),
-  ServiceItem('Cleaning', Icons.cleaning_services, Color(0xFF27AE60)),
-  ServiceItem('AC Repair', Icons.ac_unit, Color(0xFF56CCF2)),
-  ServiceItem('Carpentry', Icons.carpenter, Color(0xFF9B51E0)),
-  ServiceItem('Roofing', Icons.roofing, Color(0xFFF2994A)),
-  ServiceItem('Landscaping', Icons.yard, Color(0xFF6FCF97)),
-  ServiceItem('Moving', Icons.local_shipping, Color(0xFF4F5D75)),
-  ServiceItem('Other', Icons.more_horiz, Color(0xFF828282)),
+  ServiceItem('Painting', Icons.format_paint_outlined, Color(0xFFEB5757)),
+  ServiceItem('Moving', Icons.local_shipping_outlined, Color(0xFF4F5D75)),
+  ServiceItem('Cleaning', Icons.cleaning_services_outlined, Color(0xFF27AE60)),
+  ServiceItem('Assembly', Icons.build_outlined, Color(0xFF9B51E0)),
+  ServiceItem('Lawn Services', Icons.grass_outlined, Color(0xFF6FCF97)),
+  ServiceItem('Waste Disposal', Icons.delete_outline, Color(0xFF828282)),
+  ServiceItem('Pressure Washing', Icons.water_drop_outlined, Color(0xFF56CCF2)),
+  ServiceItem('General Handyman', Icons.handyman_outlined, Color(0xFF2D9CDB)),
 ];
 
 class PickedFile {

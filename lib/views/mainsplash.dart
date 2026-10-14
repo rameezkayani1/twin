@@ -192,13 +192,13 @@ class SplashLogin extends StatelessWidget {
             _openLogin,
           ),
           const SizedBox(height: 12),
-          _pill(
-            'Sign in with Apple',
-            const Icon(Icons.apple, size: 24),
-            Colors.white,
-            Colors.black87,
-            _openLogin,
-          ),
+          // _pill(
+          //   'Sign in with Apple',
+          //   const Icon(Icons.apple, size: 24),
+          //   Colors.white,
+          //   Colors.black87,
+          //   _openLogin,
+          // ),
           const SizedBox(height: 14),
           GestureDetector(
             onTap: _openLogin,
