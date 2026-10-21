@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:twin/views/invoices_view.dart';
 import '../controllers/app_controller.dart';
 import 'account_view.dart';
 import 'home_view.dart';
@@ -17,7 +18,8 @@ class ShellView extends StatelessWidget {
       const QuotesView(),
       RequestView(),
 
-      JobsView(),
+      // JobsView(),
+      InvoicesView(),
       const AccountView(),
     ];
     const items = [
