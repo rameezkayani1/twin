@@ -12,6 +12,7 @@ const _orange = Color(0xFFFF7A00);
 const _navy = Color(0xFF1B1464);
 const _peach = Color(0xFFFFE3C7);
 const _cream = Color(0xFFFFF7EE);
+const _logoAsset = 'assets/logo.jpeg';
 
 // =========================================================
 // USER MODEL  (Firestore document: users/{uid})
@@ -280,7 +281,12 @@ class _RegisterViewState extends State<RegisterView> {
                 color: _orange,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.handyman, color: Colors.white, size: 22),
+              child: Image.asset(
+                _logoAsset,
+                fit: BoxFit.contain,
+                errorBuilder: (c, e, s) =>
+                    const Icon(Icons.handyman, color: Colors.black, size: 24),
+              ),
             ),
             const SizedBox(width: 10),
             const Text(

@@ -22,6 +22,7 @@
 // =============================================================
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:twin/views/quotes_view.dart';
 import '../controllers/app_controller.dart';
 import '../data/models.dart';
 import 'extras_view.dart';

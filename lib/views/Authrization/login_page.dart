@@ -224,6 +224,7 @@ const _orange = Color(0xFFFF7A00);
 const _navy = Color(0xFF1B1464);
 const _peach = Color(0xFFFFE3C7);
 const _cream = Color(0xFFFFF7EE);
+const _logoAsset = 'assets/logo.jpeg';
 
 // =========================================================
 // LOGIN CONTROLLER  (logic unchanged)
@@ -410,7 +411,12 @@ class _LoginViewState extends State<LoginView> {
                 color: _orange,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: const Icon(Icons.handyman, color: Colors.white, size: 22),
+              child: Image.asset(
+                _logoAsset,
+                fit: BoxFit.contain,
+                errorBuilder: (c, e, s) =>
+                    const Icon(Icons.handyman, color: Colors.black, size: 24),
+              ),
             ),
             const SizedBox(width: 10),
             const Text(
@@ -718,13 +724,20 @@ class _FallbackHero extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [Color(0xFFFFC27A), _orange],
+                      colors: [Colors.black, Colors.black],
                     ),
                   ),
-                  child: Icon(
-                    Icons.engineering,
-                    size: s * 0.46,
-                    color: Colors.white,
+                  child: Padding(
+                    padding: EdgeInsets.all(s * 0.12),
+                    child: Image.asset(
+                      _logoAsset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (c, e, st) => Icon(
+                        Icons.engineering,
+                        size: s * 0.46,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ),

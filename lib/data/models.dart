@@ -24,6 +24,7 @@ const kServices = [
   ('Lawn Services', Icons.grass_outlined),
   ('Waste Disposal', Icons.delete_outline),
   ('Pressure Washing', Icons.water_drop_outlined),
+  ('Seasonal Services', Icons.ac_unit_rounded),
   ('General Handyman', Icons.handyman_outlined),
 ];
 const kAddresses = [

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:twin/views/invoices_view.dart';
+import 'package:twin/views/quotes_view.dart';
 import '../controllers/app_controller.dart';
 import 'account_view.dart';
 import 'home_view.dart';
@@ -26,7 +27,7 @@ class ShellView extends StatelessWidget {
       (Icons.home_outlined, 'Home'),
       (Icons.receipt_long_outlined, 'Quotes'),
       (Icons.add_circle_outline, 'Request'),
-      (Icons.event_note_outlined, 'Jobs'),
+      (Icons.event_note_outlined, 'Invoices'),
       (Icons.person_outline, 'Account'),
     ];
     return LayoutBuilder(

@@ -163,6 +163,8 @@ const kServiceItems = <ServiceItem>[
   ServiceItem('Lawn Services', Icons.grass_outlined, Color(0xFF6FCF97)),
   ServiceItem('Waste Disposal', Icons.delete_outline, Color(0xFF828282)),
   ServiceItem('Pressure Washing', Icons.water_drop_outlined, Color(0xFF56CCF2)),
+  ServiceItem('Seasonal Services', Icons.ac_unit_outlined, Color(0xFFF2994A)),
+
   ServiceItem('General Handyman', Icons.handyman_outlined, Color(0xFF2D9CDB)),
 ];
 
