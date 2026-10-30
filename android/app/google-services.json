@@ -7,12 +7,17 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:475067046837:android:73e495bb62746e3b7a97fc",
+        "mobilesdk_app_id": "1:475067046837:android:2d6261840518ecaf7a97fc",
         "android_client_info": {
-          "package_name": "com.example.twin"
+          "package_name": "com.example.admin_twinhandymans_llc"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "475067046837-v3bi84oep35kr0fgs8inf0j3dvdc4bf2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCzAGUfAWGmnf696dZDcBTglzF0VWkflyk"
@@ -20,7 +25,91 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "475067046837-v3bi84oep35kr0fgs8inf0j3dvdc4bf2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "475067046837-j0lbfrf8nt07tv0etq64jrmd4nqa06mp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.twin"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:475067046837:android:73e495bb62746e3b7a97fc",
+        "android_client_info": {
+          "package_name": "com.example.twin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "475067046837-v3bi84oep35kr0fgs8inf0j3dvdc4bf2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzAGUfAWGmnf696dZDcBTglzF0VWkflyk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "475067046837-v3bi84oep35kr0fgs8inf0j3dvdc4bf2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "475067046837-j0lbfrf8nt07tv0etq64jrmd4nqa06mp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.twin"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:475067046837:android:df10584d7be297c77a97fc",
+        "android_client_info": {
+          "package_name": "com.handyman.twin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "475067046837-v3bi84oep35kr0fgs8inf0j3dvdc4bf2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzAGUfAWGmnf696dZDcBTglzF0VWkflyk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "475067046837-v3bi84oep35kr0fgs8inf0j3dvdc4bf2.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "475067046837-j0lbfrf8nt07tv0etq64jrmd4nqa06mp.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.twin"
+              }
+            }
+          ]
         }
       }
     }

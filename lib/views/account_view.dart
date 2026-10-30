@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -13,12 +11,15 @@ import 'chat_view.dart';
 import 'extras_view.dart';
 import 'invoices_view.dart';
 
-// ── Palette: midnight + orange glow ─────────────────────────────────────────
+// ── Palette: clean light UI + orange accent ─────────────────────────────────
 const _orange = Color(0xFFFF7A00);
-const _amber = Color(0xFFFFB347);
-const _deep = Color(0xFF0B0830);
-const _navy = Color(0xFF1B1464);
-const _red = Color(0xFFFF5C62);
+const _orangeSoft = Color(0xFFFFF1E3);
+const _bg = Color(0xFFF5F6FA);
+const _card = Colors.white;
+const _border = Color(0xFFE8EAF0);
+const _ink = Color(0xFF14142B);
+const _muted = Color(0xFF6B7280);
+const _red = Color(0xFFE5484D);
 
 // =========================================================
 // ACCOUNT VIEW  (live data from Firestore: users/{uid})
@@ -31,121 +32,67 @@ class AccountView extends StatelessWidget {
     final authUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
-      backgroundColor: _deep,
-      body: _Backdrop(
-        child: SafeArea(
-          child: authUser == null
-              ? const Center(
-                  child: Text(
-                    'You are not logged in',
-                    style: TextStyle(color: Colors.white70),
-                  ),
-                )
-              : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-                  stream: FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(authUser.uid)
-                      .snapshots(),
-                  builder: (context, snap) {
-                    if (snap.hasError) {
-                      return const Center(
-                        child: Text(
-                          'Could not load your profile',
-                          style: TextStyle(color: Colors.white70),
-                        ),
-                      );
-                    }
-                    if (!snap.hasData) {
-                      return const Center(
-                        child: CircularProgressIndicator(color: _orange),
-                      );
-                    }
-                    final data = snap.data!.data();
-                    final user = data != null
-                        ? UserModel.fromMap(data)
-                        : UserModel(
-                            uid: authUser.uid,
-                            name: authUser.displayName ?? 'Customer',
-                            email: authUser.email ?? '',
-                            phone: authUser.phoneNumber ?? '',
-                          );
-                    return _Page(user: user);
-                  },
+      backgroundColor: _bg,
+      body: SafeArea(
+        child: authUser == null
+            ? const Center(
+                child: Text(
+                  'You are not logged in',
+                  style: TextStyle(color: _muted),
                 ),
-        ),
+              )
+            : StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(authUser.uid)
+                    .snapshots(),
+                builder: (context, snap) {
+                  if (snap.hasError) {
+                    return const Center(
+                      child: Text(
+                        'Could not load your profile',
+                        style: TextStyle(color: _muted),
+                      ),
+                    );
+                  }
+                  if (!snap.hasData) {
+                    return const Center(
+                      child: CircularProgressIndicator(color: _orange),
+                    );
+                  }
+                  final data = snap.data!.data();
+                  final user = data != null
+                      ? UserModel.fromMap(data)
+                      : UserModel(
+                          uid: authUser.uid,
+                          name: authUser.displayName ?? 'Customer',
+                          email: authUser.email ?? '',
+                          phone: authUser.phoneNumber ?? '',
+                        );
+                  return _Page(user: user);
+                },
+              ),
       ),
     );
   }
 }
 
-// ── Gradient background with soft orange glows ──────────────────────────────
-class _Backdrop extends StatelessWidget {
-  const _Backdrop({required this.child});
+// ── Simple white card ───────────────────────────────────────────────────────
+class _Card extends StatelessWidget {
+  const _Card({required this.child, this.padding = EdgeInsets.zero});
   final Widget child;
-
-  Widget _glow(double size, Color c) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      gradient: RadialGradient(colors: [c, c.withOpacity(0)]),
-    ),
-  );
-
-  @override
-  Widget build(BuildContext context) => Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [_navy, _deep],
-      ),
-    ),
-    child: Stack(
-      children: [
-        Positioned(
-          top: -120,
-          right: -100,
-          child: _glow(380, _orange.withOpacity(0.40)),
-        ),
-        Positioned(
-          bottom: -140,
-          left: -120,
-          child: _glow(380, const Color(0xFF5B4BFF).withOpacity(0.30)),
-        ),
-        Positioned.fill(child: child),
-      ],
-    ),
-  );
-}
-
-// ── Frosted glass container ─────────────────────────────────────────────────
-class _Glass extends StatelessWidget {
-  const _Glass({
-    required this.child,
-    this.radius = 24,
-    this.padding = EdgeInsets.zero,
-  });
-  final Widget child;
-  final double radius;
   final EdgeInsets padding;
 
   @override
-  Widget build(BuildContext context) => ClipRRect(
-    borderRadius: BorderRadius.circular(radius),
-    child: BackdropFilter(
-      filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-      child: Container(
-        width: double.infinity,
-        padding: padding,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(radius),
-          color: Colors.white.withOpacity(0.07),
-          border: Border.all(color: Colors.white.withOpacity(0.14)),
-        ),
-        child: child,
-      ),
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: padding,
+    decoration: BoxDecoration(
+      color: _card,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: _border),
     ),
+    child: ClipRRect(borderRadius: BorderRadius.circular(16), child: child),
   );
 }
 
@@ -162,37 +109,49 @@ class _Page extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 600),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 36),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(4, 4, 4, 16),
+              child: Text(
+                'Account',
+                style: TextStyle(
+                  color: _ink,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+
             _Header(user: user),
 
             _Group('Profile', [
-              _Item(Icons.person_rounded, 'Name', user.name),
-              _Item(Icons.mail_rounded, 'Email', user.email),
-              _Item(Icons.call_rounded, 'Phone', user.phone),
+              _Item(Icons.person_outline_rounded, 'Name', user.name),
+              _Item(Icons.mail_outline_rounded, 'Email', user.email),
+              _Item(Icons.call_outlined, 'Phone', user.phone),
             ]),
 
             _Group('Activity', [
               _Item(
-                Icons.payments_rounded,
+                Icons.receipt_long_outlined,
                 'Invoices & payments',
                 null,
                 onTap: () => Get.to(() => const InvoicesView()),
               ),
               _Item(
-                Icons.chat_bubble_rounded,
+                Icons.chat_bubble_outline_rounded,
                 'Messages',
                 null,
                 onTap: () => Get.to(() => const ChatPage()),
               ),
               _Item(
-                Icons.notifications_rounded,
+                Icons.notifications_none_rounded,
                 'Notifications',
                 null,
                 onTap: () => Get.to(() => const NotificationsView()),
               ),
               _Item(
-                Icons.star_rounded,
+                Icons.star_border_rounded,
                 'Reviews',
                 null,
                 onTap: () => Get.to(() => ReviewsView()),
@@ -201,7 +160,7 @@ class _Page extends StatelessWidget {
 
             _Group('Contact us', [
               _Item(
-                Icons.call_rounded,
+                Icons.call_outlined,
                 'Phone',
                 '908-803-8111',
                 onTap: () => _open(
@@ -210,7 +169,7 @@ class _Page extends StatelessWidget {
                 ),
               ),
               _Item(
-                Icons.phone_forwarded_rounded,
+                Icons.phone_forwarded_outlined,
                 'Phone',
                 '908-567-9897',
                 onTap: () => _open(
@@ -219,7 +178,7 @@ class _Page extends StatelessWidget {
                 ),
               ),
               _Item(
-                Icons.mail_rounded,
+                Icons.mail_outline_rounded,
                 'Email',
                 'mathew@twinshandymanllc.com',
                 onTap: () => _open(
@@ -228,7 +187,7 @@ class _Page extends StatelessWidget {
                 ),
               ),
               _Item(
-                Icons.location_on_rounded,
+                Icons.location_on_outlined,
                 'Address',
                 '1156 Liberty Avenue, Hillside, NJ 07205',
                 onTap: () => _open(
@@ -239,23 +198,19 @@ class _Page extends StatelessWidget {
                   '1156 Liberty Avenue, Hillside, NJ 07205',
                 ),
               ),
-              _Item(
-                Icons.access_time_filled_rounded,
-                'Hours',
-                '9:00 AM – 9:00 PM',
-              ),
+              _Item(Icons.access_time_rounded, 'Hours', '9:00 AM – 9:00 PM'),
             ]),
 
             _Group('Company', [
               _Item(
-                Icons.account_balance_rounded,
+                Icons.account_balance_outlined,
                 'Business & government documents',
                 null,
                 onTap: () => Get.to(() => const GovDocsView()),
               ),
               if (user.role == 'admin')
                 _Item(
-                  Icons.dashboard_rounded,
+                  Icons.dashboard_outlined,
                   'Owner dashboard',
                   null,
                   onTap: () => Get.to(() => const AdminView()),
@@ -272,7 +227,7 @@ class _Page extends StatelessWidget {
 }
 
 // =========================================================
-// HEADER  (glass card; row on wide, centred column on phones)
+// HEADER  (avatar + name + email + role)
 // =========================================================
 class _Header extends StatelessWidget {
   const _Header({required this.user});
@@ -303,174 +258,93 @@ class _Header extends StatelessWidget {
       'Nov',
       'Dec',
     ];
-    return 'Since ${m[d.month - 1]} ${d.year}';
+    return 'Member since ${m[d.month - 1]} ${d.year}';
   }
-
-  Widget _chip(IconData icon, String text, {bool filled = false}) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-    decoration: BoxDecoration(
-      color: filled ? _orange : Colors.white.withOpacity(0.10),
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(
-        color: filled ? _orange : Colors.white.withOpacity(0.18),
-      ),
-    ),
-    child: Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 14, color: Colors.white),
-        const SizedBox(width: 5),
-        Text(
-          text,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ],
-    ),
-  );
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, box) {
-        final wide = box.maxWidth >= 480;
-        final r = wide ? 46.0 : 42.0;
-
-        final avatar = Container(
-          padding: const EdgeInsets.all(3.5),
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [_amber, _orange],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: _orange.withOpacity(0.55),
-                blurRadius: 28,
-                spreadRadius: 1,
-              ),
-            ],
-          ),
-          child: CircleAvatar(
-            radius: r,
-            backgroundColor: _deep,
+    return _Card(
+      padding: const EdgeInsets.all(18),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 30,
+            backgroundColor: _orangeSoft,
             child: Text(
               _initials,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: wide ? 32 : 28,
+              style: const TextStyle(
+                color: _orange,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
-                letterSpacing: 1,
               ),
             ),
           ),
-        );
-
-        final info = Column(
-          crossAxisAlignment: wide
-              ? CrossAxisAlignment.start
-              : CrossAxisAlignment.center,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              user.name,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              textAlign: wide ? TextAlign.start : TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 25,
-                height: 1.15,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              user.email,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: Colors.white60, fontSize: 13.5),
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: wide ? WrapAlignment.start : WrapAlignment.center,
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _chip(
-                  Icons.verified_rounded,
-                  user.role.toUpperCase(),
-                  filled: true,
-                ),
-                if (user.phone.isNotEmpty)
-                  _chip(Icons.call_rounded, user.phone),
-                if (_since != null) _chip(Icons.cake_rounded, _since!),
-              ],
-            ),
-          ],
-        );
-
-        return _Glass(
-          radius: 30,
-          child: Stack(
-            children: [
-              Positioned(
-                right: -14,
-                bottom: -18,
-                child: Icon(
-                  Icons.handyman_rounded,
-                  size: 120,
-                  color: Colors.white.withOpacity(0.05),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(
-                  wide ? 26 : 18,
-                  wide ? 26 : 38,
-                  wide ? 26 : 18,
-                  24,
-                ),
-                child: wide
-                    ? Row(
-                        children: [
-                          avatar,
-                          const SizedBox(width: 22),
-                          Expanded(child: info),
-                        ],
-                      )
-                    : Column(
-                        children: [avatar, const SizedBox(height: 16), info],
-                      ),
-              ),
-              Positioned(
-                top: 12,
-                right: 12,
-                child: GestureDetector(
-                  onTap: () => _editProfile(context, user),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Colors.white.withOpacity(0.12),
-                      border: Border.all(color: Colors.white.withOpacity(0.2)),
-                    ),
-                    child: const Icon(
-                      Icons.edit_rounded,
-                      size: 17,
-                      color: Colors.white,
-                    ),
+                Text(
+                  user.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _ink,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 2),
+                Text(
+                  user.email,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(color: _muted, fontSize: 13.5),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _orangeSoft,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        user.role.toUpperCase(),
+                        style: const TextStyle(
+                          color: _orange,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ),
+                    if (_since != null) ...[
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text(
+                          _since!,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: _muted, fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
           ),
-        );
-      },
+          IconButton(
+            tooltip: 'Edit profile',
+            onPressed: () => _editProfile(context, user),
+            icon: const Icon(Icons.edit_outlined, color: _ink, size: 20),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -487,44 +361,29 @@ class _Group extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      const SizedBox(height: 26),
       Padding(
-        padding: const EdgeInsets.only(left: 6, bottom: 10),
-        child: Row(
-          children: [
-            Container(
-              width: 4,
-              height: 16,
-              decoration: BoxDecoration(
-                color: _orange,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title.toUpperCase(),
-              style: const TextStyle(
-                color: Colors.white70,
-                fontWeight: FontWeight.w800,
-                fontSize: 12,
-                letterSpacing: 1.6,
-              ),
-            ),
-          ],
+        padding: const EdgeInsets.fromLTRB(6, 24, 0, 8),
+        child: Text(
+          title.toUpperCase(),
+          style: const TextStyle(
+            color: _muted,
+            fontWeight: FontWeight.w700,
+            fontSize: 12,
+            letterSpacing: 1.2,
+          ),
         ),
       ),
-      _Glass(
-        radius: 24,
+      _Card(
         child: Column(
           children: [
             for (var i = 0; i < items.length; i++) ...[
               items[i],
               if (i != items.length - 1)
-                Divider(
+                const Divider(
                   height: 1,
-                  indent: 68,
-                  endIndent: 16,
-                  color: Colors.white.withOpacity(0.09),
+                  thickness: 1,
+                  indent: 62,
+                  color: _border,
                 ),
             ],
           ],
@@ -551,17 +410,17 @@ class _Item extends StatelessWidget {
             Get.snackbar('Copied', value!);
           },
     child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       child: Row(
         children: [
           Container(
-            width: 40,
-            height: 40,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _orange.withOpacity(0.16),
+              borderRadius: BorderRadius.circular(10),
+              color: _orangeSoft,
             ),
-            child: Icon(icon, size: 20, color: _amber),
+            child: Icon(icon, size: 19, color: _orange),
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -569,8 +428,8 @@ class _Item extends StatelessWidget {
                 ? Text(
                     label,
                     style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                      color: _ink,
+                      fontWeight: FontWeight.w600,
                       fontSize: 15,
                     ),
                   )
@@ -579,17 +438,14 @@ class _Item extends StatelessWidget {
                     children: [
                       Text(
                         label,
-                        style: const TextStyle(
-                          color: Colors.white54,
-                          fontSize: 12,
-                        ),
+                        style: const TextStyle(color: _muted, fontSize: 12),
                       ),
                       const SizedBox(height: 1),
                       Text(
                         value!.isEmpty ? '—' : value!,
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
+                          color: _ink,
+                          fontWeight: FontWeight.w600,
                           fontSize: 15,
                         ),
                       ),
@@ -600,7 +456,7 @@ class _Item extends StatelessWidget {
             const Icon(
               Icons.chevron_right_rounded,
               size: 22,
-              color: Colors.white38,
+              color: Color(0xFFB4B8C5),
             ),
         ],
       ),
@@ -612,33 +468,23 @@ class _LogoutButton extends StatelessWidget {
   const _LogoutButton();
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: () async {
-      await FirebaseAuth.instance.signOut();
-      Get.offAll(() => const LoginView());
-    },
-    child: Container(
-      height: 54,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(40),
-        color: _red.withOpacity(0.12),
-        border: Border.all(color: _red.withOpacity(0.7), width: 1.4),
+  Widget build(BuildContext context) => SizedBox(
+    height: 52,
+    child: OutlinedButton.icon(
+      onPressed: () async {
+        await FirebaseAuth.instance.signOut();
+        Get.offAll(() => const LoginView());
+      },
+      icon: const Icon(Icons.logout_rounded, size: 20),
+      label: const Text(
+        'Log out',
+        style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15.5),
       ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.logout_rounded, color: _red, size: 20),
-          SizedBox(width: 8),
-          Text(
-            'Log out',
-            style: TextStyle(
-              color: _red,
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
-            ),
-          ),
-        ],
+      style: OutlinedButton.styleFrom(
+        foregroundColor: _red,
+        backgroundColor: _card,
+        side: const BorderSide(color: _border),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
     ),
   );
@@ -657,18 +503,19 @@ Future<void> _open(Uri uri, String copyText) async {
 // =========================================================
 InputDecoration _fieldDeco(String label, IconData icon) => InputDecoration(
   labelText: label,
-  labelStyle: const TextStyle(color: Colors.white60),
-  floatingLabelStyle: const TextStyle(color: _amber),
-  prefixIcon: Icon(icon, color: _amber),
+  labelStyle: const TextStyle(color: _muted),
+  floatingLabelStyle: const TextStyle(color: _orange),
+  prefixIcon: Icon(icon, color: _muted, size: 20),
   filled: true,
-  fillColor: Colors.white.withOpacity(0.08),
+  fillColor: _bg,
+  contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 14),
   enabledBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(18),
-    borderSide: BorderSide(color: Colors.white.withOpacity(0.18)),
+    borderRadius: BorderRadius.circular(12),
+    borderSide: const BorderSide(color: _border),
   ),
   focusedBorder: OutlineInputBorder(
-    borderRadius: BorderRadius.circular(18),
-    borderSide: const BorderSide(color: _orange, width: 2),
+    borderRadius: BorderRadius.circular(12),
+    borderSide: const BorderSide(color: _orange, width: 1.6),
   ),
 );
 
@@ -680,15 +527,14 @@ Future<void> _editProfile(BuildContext context, UserModel user) async {
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: const Color(0xFF14104A),
-    shape: RoundedRectangleBorder(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
-      side: BorderSide(color: Colors.white.withOpacity(0.14)),
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
     ),
     builder: (ctx) => Padding(
       padding: EdgeInsets.fromLTRB(
         22,
-        14,
+        12,
         22,
         MediaQuery.of(ctx).viewInsets.bottom + 24,
       ),
@@ -702,10 +548,10 @@ Future<void> _editProfile(BuildContext context, UserModel user) async {
             children: [
               Center(
                 child: Container(
-                  width: 44,
+                  width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.white24,
+                    color: _border,
                     borderRadius: BorderRadius.circular(4),
                   ),
                 ),
@@ -714,8 +560,8 @@ Future<void> _editProfile(BuildContext context, UserModel user) async {
               const Text(
                 'Edit profile',
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
+                  color: _ink,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -724,10 +570,10 @@ Future<void> _editProfile(BuildContext context, UserModel user) async {
                 controller: name,
                 cursorColor: _orange,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: _ink,
                   fontWeight: FontWeight.w600,
                 ),
-                decoration: _fieldDeco('Full name', Icons.person_rounded),
+                decoration: _fieldDeco('Full name', Icons.person_outline),
               ),
               const SizedBox(height: 14),
               TextField(
@@ -735,57 +581,55 @@ Future<void> _editProfile(BuildContext context, UserModel user) async {
                 keyboardType: TextInputType.phone,
                 cursorColor: _orange,
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: _ink,
                   fontWeight: FontWeight.w600,
                 ),
-                decoration: _fieldDeco('Phone', Icons.call_rounded),
+                decoration: _fieldDeco('Phone', Icons.call_outlined),
               ),
               const SizedBox(height: 22),
               Obx(
-                () => GestureDetector(
-                  onTap: saving.value
-                      ? null
-                      : () async {
-                          final n = name.text.trim();
-                          final p = phone.text.trim();
-                          if (n.isEmpty || p.isEmpty) {
-                            Get.snackbar(
-                              'Missing info',
-                              'Name and phone cannot be empty',
-                            );
-                            return;
-                          }
-                          saving.value = true;
-                          try {
-                            await FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(user.uid)
-                                .update({'name': n, 'phone': p});
-                            await FirebaseAuth.instance.currentUser
-                                ?.updateDisplayName(n);
-                            if (ctx.mounted) Navigator.of(ctx).pop();
-                          } catch (_) {
-                            Get.snackbar(
-                              'Error',
-                              'Could not update your profile',
-                            );
-                          } finally {
-                            saving.value = false;
-                          }
-                        },
-                  child: Container(
-                    height: 54,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(40),
-                      gradient: const LinearGradient(colors: [_amber, _orange]),
-                      boxShadow: [
-                        BoxShadow(
-                          color: _orange.withOpacity(0.45),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
+                () => SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: saving.value
+                        ? null
+                        : () async {
+                            final n = name.text.trim();
+                            final p = phone.text.trim();
+                            if (n.isEmpty || p.isEmpty) {
+                              Get.snackbar(
+                                'Missing info',
+                                'Name and phone cannot be empty',
+                              );
+                              return;
+                            }
+                            saving.value = true;
+                            try {
+                              await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(user.uid)
+                                  .update({'name': n, 'phone': p});
+                              await FirebaseAuth.instance.currentUser
+                                  ?.updateDisplayName(n);
+                              if (ctx.mounted) Navigator.of(ctx).pop();
+                            } catch (_) {
+                              Get.snackbar(
+                                'Error',
+                                'Could not update your profile',
+                              );
+                            } finally {
+                              saving.value = false;
+                            }
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _orange,
+                      foregroundColor: Colors.white,
+                      disabledBackgroundColor: _orange.withOpacity(0.6),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: saving.value
                         ? const SizedBox(
@@ -799,8 +643,7 @@ Future<void> _editProfile(BuildContext context, UserModel user) async {
                         : const Text(
                             'Save changes',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                               fontSize: 16,
                             ),
                           ),
@@ -817,7 +660,6 @@ Future<void> _editProfile(BuildContext context, UserModel user) async {
   name.dispose();
   phone.dispose();
 }
-
 // import 'package:flutter/material.dart';
 // import 'package:get/get.dart';
 // import 'package:twin/views/Authrization/login_page.dart';
