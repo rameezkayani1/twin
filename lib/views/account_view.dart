@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:twin/views/mainsplash.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -473,7 +474,7 @@ class _LogoutButton extends StatelessWidget {
     child: OutlinedButton.icon(
       onPressed: () async {
         await FirebaseAuth.instance.signOut();
-        Get.offAll(() => const LoginView());
+        Get.offAll(() => const SplashLogin());
       },
       icon: const Icon(Icons.logout_rounded, size: 20),
       label: const Text(

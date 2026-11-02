@@ -22,6 +22,7 @@
 // =============================================================
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:twin/views/chat_view.dart';
 import 'package:twin/views/quotes_view.dart';
 import '../controllers/app_controller.dart';
 import '../data/models.dart';
@@ -394,6 +395,7 @@ class HomeView extends StatelessWidget {
   }
 
   // ───────────────────────── header ─────────────────────────
+
   Widget _header(BuildContext context, String? uid) {
     return Row(
       children: [
@@ -408,6 +410,7 @@ class HomeView extends StatelessWidget {
             final name = (s.data?.data()?['name'] ?? '').toString().trim();
             final first = name.isEmpty ? 'there' : name.split(' ').first;
             final initial = name.isEmpty ? '👋' : name[0].toUpperCase();
+
             return Expanded(
               child: Row(
                 children: [
@@ -417,11 +420,7 @@ class HomeView extends StatelessWidget {
                     alignment: Alignment.center,
                     decoration: const BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: LinearGradient(
-                        colors: [_P.coral, _P.sun],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
+                      gradient: LinearGradient(colors: [_P.coral, _P.sun]),
                     ),
                     child: Text(
                       initial,
@@ -439,8 +438,6 @@ class HomeView extends StatelessWidget {
                       children: [
                         Text(
                           _greeting(),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             color: _P.muted,
                             fontSize: 12.5,
@@ -455,7 +452,6 @@ class HomeView extends StatelessWidget {
                             color: _P.ink,
                             fontSize: 19,
                             fontWeight: FontWeight.w900,
-                            letterSpacing: -.3,
                           ),
                         ),
                       ],
@@ -466,7 +462,54 @@ class HomeView extends StatelessWidget {
             );
           },
         ),
-        const SizedBox(width: 10),
+
+        const SizedBox(width: 8),
+
+        // Customer Support Chat
+        _Tap(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ChatPage()),
+            );
+          },
+          child: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: _P.card,
+              shape: BoxShape.circle,
+              border: Border.all(color: _P.line),
+            ),
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(
+                  Icons.support_agent_rounded,
+                  color: _P.ink,
+                  size: 25,
+                ),
+                Positioned(
+                  right: 9,
+                  top: 9,
+                  child: Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _P.card, width: 1.5),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(width: 8),
+
+        // Notifications
         Obx(
           () => _Tap(
             onTap: () => _openActivity(context),
@@ -519,6 +562,132 @@ class HomeView extends StatelessWidget {
       ],
     );
   }
+
+  // Widget _header(BuildContext context, String? uid) {
+  //   return Row(
+  //     children: [
+  //       StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+  //         stream: uid == null
+  //             ? null
+  //             : FirebaseFirestore.instance
+  //                   .collection('users')
+  //                   .doc(uid)
+  //                   .snapshots(),
+  //         builder: (context, s) {
+  //           final name = (s.data?.data()?['name'] ?? '').toString().trim();
+  //           final first = name.isEmpty ? 'there' : name.split(' ').first;
+  //           final initial = name.isEmpty ? '👋' : name[0].toUpperCase();
+  //           return Expanded(
+  //             child: Row(
+  //               children: [
+  //                 Container(
+  //                   width: 46,
+  //                   height: 46,
+  //                   alignment: Alignment.center,
+  //                   decoration: const BoxDecoration(
+  //                     shape: BoxShape.circle,
+  //                     gradient: LinearGradient(
+  //                       colors: [_P.coral, _P.sun],
+  //                       begin: Alignment.topLeft,
+  //                       end: Alignment.bottomRight,
+  //                     ),
+  //                   ),
+  //                   child: Text(
+  //                     initial,
+  //                     style: const TextStyle(
+  //                       color: Colors.white,
+  //                       fontSize: 19,
+  //                       fontWeight: FontWeight.w900,
+  //                     ),
+  //                   ),
+  //                 ),
+  //                 const SizedBox(width: 12),
+  //                 Expanded(
+  //                   child: Column(
+  //                     crossAxisAlignment: CrossAxisAlignment.start,
+  //                     children: [
+  //                       Text(
+  //                         _greeting(),
+  //                         maxLines: 1,
+  //                         overflow: TextOverflow.ellipsis,
+  //                         style: const TextStyle(
+  //                           color: _P.muted,
+  //                           fontSize: 12.5,
+  //                           fontWeight: FontWeight.w600,
+  //                         ),
+  //                       ),
+  //                       Text(
+  //                         first,
+  //                         maxLines: 1,
+  //                         overflow: TextOverflow.ellipsis,
+  //                         style: const TextStyle(
+  //                           color: _P.ink,
+  //                           fontSize: 19,
+  //                           fontWeight: FontWeight.w900,
+  //                           letterSpacing: -.3,
+  //                         ),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           );
+  //         },
+  //       ),
+  //       const SizedBox(width: 10),
+  //       Obx(
+  //         () => _Tap(
+  //           onTap: () => _openActivity(context),
+  //           child: Stack(
+  //             clipBehavior: Clip.none,
+  //             children: [
+  //               Container(
+  //                 width: 46,
+  //                 height: 46,
+  //                 decoration: BoxDecoration(
+  //                   color: _P.card,
+  //                   shape: BoxShape.circle,
+  //                   border: Border.all(color: _P.line),
+  //                 ),
+  //                 child: const Icon(
+  //                   Icons.notifications_none_rounded,
+  //                   color: _P.ink,
+  //                 ),
+  //               ),
+  //               if (c.notifs.isNotEmpty)
+  //                 Positioned(
+  //                   right: -2,
+  //                   top: -2,
+  //                   child: Container(
+  //                     constraints: const BoxConstraints(minWidth: 20),
+  //                     padding: const EdgeInsets.symmetric(
+  //                       horizontal: 5,
+  //                       vertical: 2,
+  //                     ),
+  //                     decoration: BoxDecoration(
+  //                       color: _P.coral,
+  //                       borderRadius: BorderRadius.circular(10),
+  //                       border: Border.all(color: _P.bg, width: 2),
+  //                     ),
+  //                     child: Text(
+  //                       '${c.notifs.length}',
+  //                       textAlign: TextAlign.center,
+  //                       style: const TextStyle(
+  //                         color: Colors.white,
+  //                         fontSize: 10,
+  //                         fontWeight: FontWeight.w900,
+  //                       ),
+  //                     ),
+  //                   ),
+  //                 ),
+  //             ],
+  //           ),
+  //         ),
+  //       ),
+  //     ],
+  //   );
+  // }
 
   // ───────────────────────── journey card ─────────────────────────
   Widget _journey(Map<String, dynamic> q, int total) {

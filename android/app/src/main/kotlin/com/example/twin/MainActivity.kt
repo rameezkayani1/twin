@@ -1,4 +1,4 @@
-package com.example.twin
+package com.handyman.twin
 
 import io.flutter.embedding.android.FlutterActivity
 

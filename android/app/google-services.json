@@ -86,6 +86,22 @@
       },
       "oauth_client": [
         {
+          "client_id": "475067046837-1dlqlfagkovtfa62u8eqtgs3tkifvoav.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.handyman.twin",
+            "certificate_hash": "56e2169c7c6739840d9bf952d9f51bd51c9d4177"
+          }
+        },
+        {
+          "client_id": "475067046837-psch996cds0fadmjj0bfvsennfon49o7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.handyman.twin",
+            "certificate_hash": "ba7357f2c582b2f9eedcffc00b3b99068ea8e19c"
+          }
+        },
+        {
           "client_id": "475067046837-v3bi84oep35kr0fgs8inf0j3dvdc4bf2.apps.googleusercontent.com",
           "client_type": 3
         }
