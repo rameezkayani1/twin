@@ -45,7 +45,7 @@ import 'package:get/get.dart';
 const bool kDemoPayment = true;
 
 /// Shown on the invoice. Replace with your real business details.
-const String kCompanyName = 'Your Company';
+const String kCompanyName = ' Twin Handyman';
 const String kCompanyTagline = 'Home services you can trust';
 
 // ---------------------------------------------------------

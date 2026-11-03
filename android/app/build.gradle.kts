@@ -12,11 +12,8 @@ if (keystorePropertiesFile.exists()) {
 
 plugins {
     id("com.android.application")
-    // START: FlutterFire Configuration
     id("com.google.gms.google-services")
-    // END: FlutterFire Configuration
     id("kotlin-android")
-    // Flutter Gradle Plugin must be applied after Android and Kotlin plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
 
@@ -52,12 +49,22 @@ android {
         }
     }
 
-    // Production build configuration
+    // Release optimization using Android R8
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
-            isMinifyEnabled = false
-            isShrinkResources = false
+
+            // Enable code shrinking and obfuscation
+            isMinifyEnabled = true
+
+            // Enable unused resource removal
+            isShrinkResources = true
+
+            // R8 optimization configuration
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
         }
     }
 }
