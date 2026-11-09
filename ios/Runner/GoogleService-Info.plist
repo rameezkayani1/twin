@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>CLIENT_ID</key>
+	<string>475067046837-8pnf9ncdkac3b81ait6qd32fsuht54qu.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.475067046837-8pnf9ncdkac3b81ait6qd32fsuht54qu</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>475067046837-1dlqlfagkovtfa62u8eqtgs3tkifvoav.apps.googleusercontent.com</string>
 	<key>API_KEY</key>
 	<string>AIzaSyDMhIPtFzcQPTgFTjd2XnSG5ZBflJ-jyr8</string>
 	<key>GCM_SENDER_ID</key>
@@ -9,7 +15,7 @@
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.rameezkayanitwinshandyman</string>
+	<string>com.handyman.twin.ios</string>
 	<key>PROJECT_ID</key>
 	<string>twin-handyman</string>
 	<key>STORAGE_BUCKET</key>
@@ -25,6 +31,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:475067046837:ios:105aca3ecadbd9f27a97fc</string>
+	<string>1:475067046837:ios:4b64d915f18bade27a97fc</string>
 </dict>
 </plist>
